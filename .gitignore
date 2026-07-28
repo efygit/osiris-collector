@@ -1,0 +1,12 @@
+# Hassas ortam değişkenleri (API Keys)
+.env
+
+# Geçici çıktı klasörleri ve önbellekler
+output/
+__pycache__/
+*.pyc
+
+# IDE ve OS bağımlı dosyalar
+.vscode/
+.idea/
+.DS_Store

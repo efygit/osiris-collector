@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IRIS GEOINT - Siber İstihbarat & Canlı Coğrafi Harita</title>
+  <meta name="description" content="IRIS açık kaynak kodlu platformunun canlı coğrafi istihbarat, deprem, afet, uçuş ve yapay zeka konumlandırmalı haber takip arayüzü.">
+  
+  <!-- Google Fonts & Font Awesome Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Header / Navigation Bar -->
+  <header class="navbar">
+    <div class="brand">
+      <div class="logo-icon glow-pulse">
+        <i class="fa-solid fa-satellite-dish"></i>
+      </div>
+      <div class="brand-text">
+        <h1 class="brand-title">IRIS <span class="accent-text">GEOINT</span></h1>
+        <p class="brand-subtitle"><i class="fa-solid fa-radar"></i> CANLI COĞRAFİ İSTİHBARAT</p>
+      </div>
+    </div>
+
+    <!-- Live KPI Stats Bar -->
+    <div class="kpi-container">
+      <div class="kpi-card">
+        <span class="kpi-label"><i class="fa-solid fa-layer-group"></i> Toplam Olay</span>
+        <span class="kpi-value" id="kpi-total">0</span>
+      </div>
+      <div class="kpi-card danger">
+        <span class="kpi-label"><i class="fa-solid fa-house-crack"></i> Depremler</span>
+        <span class="kpi-value" id="kpi-earthquakes">0</span>
+      </div>
+      <div class="kpi-card warning">
+        <span class="kpi-label"><i class="fa-solid fa-volcano"></i> Afetler</span>
+        <span class="kpi-value" id="kpi-disasters">0</span>
+      </div>
+      <div class="kpi-card info">
+        <span class="kpi-label"><i class="fa-solid fa-plane-triangle"></i> Uçuşlar</span>
+        <span class="kpi-value" id="kpi-aviation">0</span>
+      </div>
+      <div class="kpi-card primary">
+        <span class="kpi-label"><i class="fa-solid fa-newspaper"></i> Haberler</span>
+        <span class="kpi-value" id="kpi-news">0</span>
+      </div>
+    </div>
+
+    <!-- Right Actions (Icon Only Refresh Button) -->
+    <div class="navbar-actions">
+      <button class="btn-icon" id="btn-refresh" title="Verileri Yenile">
+        <i class="fa-solid fa-arrows-rotate" id="refresh-icon"></i>
+      </button>
+      <div class="status-badge" id="live-indicator">
+        <span class="pulse-dot"></span> CANLI AKIŞ
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace Layout -->
+  <main class="workspace">
+    <!-- Left Sidebar: Event Feed & Filters (Collapsible) -->
+    <aside class="sidebar" id="sidebar">
+      <!-- Collapse Toggle Button -->
+      <button class="sidebar-toggle-btn" id="sidebar-toggle" title="Paneli Gizle / Göster">
+        <i class="fa-solid fa-chevron-left" id="toggle-icon"></i>
+      </button>
+
+      <div class="sidebar-content">
+        <!-- Search & Category Filters -->
+        <div class="filter-box">
+          <div class="search-input-wrapper">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="search-input" placeholder="Olay, şehir veya ülke ara...">
+          </div>
+
+          <!-- Time Range Filter & Category Tabs -->
+          <div class="filter-controls-row">
+            <div class="time-range-wrapper">
+              <i class="fa-solid fa-clock-rotate-left time-icon"></i>
+              <select id="time-range-select" title="Harita & Panel Zaman Aralığı">
+                <option value="6">Son 6 Saat</option>
+                <option value="12">Son 12 Saat</option>
+                <option value="18">Son 18 Saat</option>
+                <option value="24" selected>Son 24 Saat (Tümü)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="category-tabs">
+            <button class="tab-btn active" data-category="all">Tümü</button>
+            <button class="tab-btn" data-category="earthquake"><i class="fa-solid fa-house-crack"></i> Deprem</button>
+            <button class="tab-btn" data-category="disaster"><i class="fa-solid fa-triangle-exclamation"></i> Afet</button>
+            <button class="tab-btn" data-category="aviation"><i class="fa-solid fa-plane"></i> Uçuş</button>
+            <button class="tab-btn" data-category="news"><i class="fa-solid fa-newspaper"></i> Haber</button>
+          </div>
+        </div>
+
+        <!-- Events List Feed -->
+        <div class="events-feed custom-scrollbar" id="events-list">
+          <div class="feed-loader">
+            <i class="fa-solid fa-circle-notch fa-spin"></i>
+            <p>Son 24 saatlik coğrafi veriler yükleniyor...</p>
+          </div>
+        </div>
+
+        <!-- Load More (+6 Hours) Controls at Bottom of Feed -->
+        <div class="load-more-box" id="load-more-wrapper">
+          <button class="btn btn-outline load-more-btn" id="btn-load-more">
+            <i class="fa-solid fa-angles-down"></i> Daha Fazla Olay Göster (+6 Saat)
+          </button>
+          <span class="range-indicator-text" id="range-indicator-text">Gösterilen: Son 6 Saat</span>
+        </div>
+
+        <!-- Footer Info -->
+        <div class="sidebar-footer">
+          <span>Son Güncelleme: <strong id="last-updated-time">--:--:--</strong></span>
+          <span>Yapay Zeka: <strong>Gemini Flash AI</strong></span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Center/Right: Interactive Map Container -->
+    <section class="map-container">
+      <div id="map"></div>
+
+      <!-- Floating Re-open Sidebar Button when collapsed -->
+      <button class="map-reopen-sidebar-btn" id="reopen-sidebar-btn" title="Yan Paneli Aç">
+        <i class="fa-solid fa-list-ul"></i> Haber Paneli
+      </button>
+
+      <!-- Map Layer Switcher Floating Controls -->
+      <div class="map-layer-controls">
+        <button class="map-layer-btn active" id="layer-dark" title="Koyu Harita">
+          <i class="fa-solid fa-moon"></i> Koyu Tema
+        </button>
+        <button class="map-layer-btn" id="layer-satellite" title="Uydu Haritası">
+          <i class="fa-solid fa-satellite"></i> Uydu
+        </button>
+        <button class="map-layer-btn" id="layer-street" title="Sokak Haritası">
+          <i class="fa-solid fa-map"></i> Sokak
+        </button>
+      </div>
+
+      <!-- Map Legend Overlay with Icons and Colors -->
+      <div class="map-legend">
+        <h4><i class="fa-solid fa-layer-group"></i> Harita Lejantı</h4>
+        <div class="legend-item"><span class="legend-dot danger"><i class="fa-solid fa-house-crack"></i></span> Deprem (USGS)</div>
+        <div class="legend-item"><span class="legend-dot warning"><i class="fa-solid fa-fire"></i></span> Doğal Afet / Yangın (NASA/GDACS)</div>
+        <div class="legend-item"><span class="legend-dot info"><i class="fa-solid fa-plane"></i></span> Canlı Uçuş (OpenSky)</div>
+        <div class="legend-item"><span class="legend-dot primary"><i class="fa-solid fa-newspaper"></i></span> AI Konumlandırmalı Haber</div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Event Details Modal -->
+  <div class="modal-backdrop" id="event-modal">
+    <div class="modal-card">
+      <button class="modal-close-btn" id="modal-close">&times;</button>
+      <div class="modal-header">
+        <span class="badge" id="modal-category">Haber</span>
+        <h3 id="modal-title">Olay Başlığı</h3>
+      </div>
+      <div class="modal-body">
+        <p id="modal-description">Olay detayları burada yer alacak...</p>
+
+        <div class="modal-grid">
+          <div class="grid-item">
+            <span class="item-label"><i class="fa-solid fa-building"></i> Kaynak:</span>
+            <span class="item-val" id="modal-source">-</span>
+          </div>
+          <div class="grid-item">
+            <span class="item-label"><i class="fa-solid fa-clock"></i> Zaman:</span>
+            <span class="item-val" id="modal-time">-</span>
+          </div>
+          <div class="grid-item">
+            <span class="item-label"><i class="fa-solid fa-globe"></i> Yayıncı Ülke:</span>
+            <span class="item-val" id="modal-publisher">-</span>
+          </div>
+          <div class="grid-item">
+            <span class="item-label"><i class="fa-solid fa-location-dot"></i> Konum Tipi:</span>
+            <span class="item-val" id="modal-location-type">-</span>
+          </div>
+          <div class="grid-item full-width">
+            <span class="item-label"><i class="fa-solid fa-map-pin"></i> Koordinat:</span>
+            <span class="item-val code" id="modal-coords">[0.0, 0.0]</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <a href="#" target="_blank" class="btn btn-primary" id="modal-link-btn">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i> Kaynak Makaleye Git
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="app.js"></script>
+</body>
+</html>

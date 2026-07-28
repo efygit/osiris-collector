@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # Node 1: OSIRIS Veri Toplayıcı Arka Plan Worker Servisi
+  osiris-collector:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: osiris_collector
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_HOST=postgis
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=osiris_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    depends_on:
+      - postgis
+    volumes:
+      - ./output:/app/output
+      - ./osiris_data_sources.xlsx:/app/osiris_data_sources.xlsx
+    restart: always
+
+  # Node 2: Bağımsız OSIRIS Web UI Harita Sunucu Servisi (PostGIS Okuyucu)
+  osiris-ui:
+    build:
+      context: ./osiris-ui
+      dockerfile: Dockerfile
+    container_name: osiris_ui
+    ports:
+      - "8080:8080"
+    environment:
+      - POSTGRES_HOST=postgis
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=osiris_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - PORT=8080
+    depends_on:
+      - postgis
+    volumes:
+      - ./output:/app/output
+    restart: always
+
+  # Node 3: PostGIS PostgreSQL Veritabanı Servisi
+  postgis:
+    image: postgis/postgis:15-3.3
+    container_name: osiris_postgis
+    environment:
+      POSTGRES_DB: osiris_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgis_data:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    restart: always
+
+volumes:
+  postgis_data:
