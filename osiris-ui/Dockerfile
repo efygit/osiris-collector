@@ -9,6 +9,4 @@ COPY . .
 
 RUN chmod -R 777 /app
 
-EXPOSE 8080
-
 CMD ["python", "server.py"]
