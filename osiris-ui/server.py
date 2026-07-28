@@ -16,12 +16,12 @@ except ImportError:
 PORT = int(os.getenv("PORT", "8080"))
 PUBLIC_DIR = os.path.join(os.path.dirname(__file__), "public")
 
-# PostGIS Bağlantı Ayarları
-POSTGRES_HOST = os.getenv("POSTGRES_HOST", "postgis")
+# OpenShift PostGIS Bağlantı Ayarları (Varsayılanlar OpenShift servis adı ve veri tabanıyla birebir eşleşir)
+POSTGRES_HOST = os.getenv("POSTGRES_HOST", "postgis-db")
 POSTGRES_PORT = int(os.getenv("POSTGRES_PORT", "5432"))
-POSTGRES_DB = os.getenv("POSTGRES_DB", "osiris_db")
-POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "postgres")
+POSTGRES_DB = os.getenv("POSTGRES_DB", "gisdb")
+POSTGRES_USER = os.getenv("POSTGRES_USER", "myuser")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "mypassword123")
 
 class OsirisUIHandler(http.server.SimpleHTTPRequestHandler):
     """

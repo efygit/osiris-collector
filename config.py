@@ -12,12 +12,12 @@ OPENAI_MODEL = os.getenv("OPENAI_MODEL", "models/gemini-2.0-flash")
 # Veri toplama sıklığı (Dakika)
 FETCH_INTERVAL_MINUTES = int(os.getenv("FETCH_INTERVAL_MINUTES", "10"))
 
-# PostGIS PostgreSQL Yapılandırması
-POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
+# OpenShift & Yerel PostGIS PostgreSQL Yapılandırması (OpenShift varsayılanları)
+POSTGRES_HOST = os.getenv("POSTGRES_HOST", "postgis-db")
 POSTGRES_PORT = int(os.getenv("POSTGRES_PORT", "5432"))
-POSTGRES_DB = os.getenv("POSTGRES_DB", "osiris_db")
-POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "postgres")
+POSTGRES_DB = os.getenv("POSTGRES_DB", "gisdb")
+POSTGRES_USER = os.getenv("POSTGRES_USER", "myuser")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "mypassword123")
 
 # Yayın yapan sitelerin varsayılan yayıncı ülkeleri ve merkez koordinatları (Lon, Lat)
 PUBLISHER_COUNTRIES = {
